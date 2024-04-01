@@ -5,6 +5,11 @@ from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.metrics.pairwise import cosine_similarity
 import re
 import textstat
+import os
+import google.generativeai as genai
+from dotenv import load_dotenv
+
+load_dotenv()
 
 # Load the pre-trained spaCy model
 nlp = spacy.load("en_core_web_sm")
@@ -66,18 +71,46 @@ def score_resume(resume_text, job_description=None):
 
 # Helper functions
 def calculate_impact_score(resume_text):
-    # Look for quantifiable achievements and metrics
+    # Quantifying impact
     impact_pattern = r'\b\d+\%?\b|\$\d+|\d+\s?(million|thousand|billion)'
     impact_matches = re.findall(impact_pattern, resume_text, re.IGNORECASE)
-    impact_score = len(impact_matches) / len(resume_text.split()) * 100
-    return int(impact_score)
+    quantified_impact_score = len(impact_matches) / len(resume_text.split()) * 50
+
+    # Accomplishment-oriented language
+    accomplishment_words = ["achieved", "accomplished", "improved", "increased", "enhanced", "optimized"]
+    accomplishment_words_count = sum(resume_text.lower().count(word) for word in accomplishment_words)
+    accomplishment_language_score = (accomplishment_words_count / len(resume_text.split())) * 50
+
+    # Calculate the overall impact score
+    impact_score = int(quantified_impact_score + accomplishment_language_score)
+    return impact_score*20
 
 def calculate_brevity_score(resume_text):
-    # Calculate the average sentence length
-    sentences = resume_text.split('. ')
-    avg_sentence_length = sum(len(sentence.split()) for sentence in sentences) / len(sentences)
-    brevity_score = 100 - (avg_sentence_length - 15) * 5  # Adjust the formula as needed
-    return max(0, min(100, int(brevity_score)))
+    # Resume length
+    word_count = len(resume_text.split())
+    resume_length_score = 0
+    if 450 <= word_count <= 650:
+        resume_length_score = 30
+    elif 650 < word_count <= 850:
+        resume_length_score = 20
+    else:
+        resume_length_score = 10
+
+    # Use of bullet points
+    bullet_points = re.findall(r'^\s*[-*•]\s', resume_text, re.MULTILINE)
+    bullet_points_score = len(bullet_points) / len(resume_text.split()) * 30
+
+    # Total bullet points
+    total_bullet_points_score = min(len(bullet_points), 20) / 20 * 20
+
+    # Accomplishment-oriented language
+    accomplishment_words = ["achieved", "accomplished", "improved", "increased", "enhanced", "optimized"]
+    accomplishment_words_count = sum(resume_text.lower().count(word) for word in accomplishment_words)
+    accomplishment_language_score = (accomplishment_words_count / len(resume_text.split())) * 20
+
+    # Calculate the overall brevity score
+    brevity_score = int(resume_length_score + bullet_points_score + total_bullet_points_score + accomplishment_language_score)
+    return brevity_score
 
 def calculate_style_score(resume_text):
     # Check for consistent formatting, headings, and bullet points
@@ -126,9 +159,14 @@ def generate_suggestions(resume_text, similarity_score, impact_score, brevity_sc
     return suggestions
 
 def generate_profile_summary(resume_text):
-    # Extract the first few sentences as the profile summary
-    sentences = resume_text.split('. ')
-    profile_summary = '. '.join(sentences[:3]) + '.'
+    genai.configure(api_key=os.getenv("GOOGLE_API_KEY"))
+
+    model = genai.GenerativeModel('gemini-pro')
+    prompt = f"Generate a 200-300 word technical summary of a candidate's skills, experience, and background based on the following resume text:\n\n{resume_text}"
+
+    response = model.generate_content(prompt)
+    profile_summary = response.text
+
     return profile_summary
 
 def input_pdf_text(uploaded_file):
@@ -172,12 +210,6 @@ if submit:
 
         st.markdown("#### Sections Score")
         st.markdown(f"**{resume_score['Sections Score']}%**")
-
-        st.markdown("#### Soft Skills Score")
-        st.markdown(f"**{resume_score['Soft Skills Score']}%**")
-
-        st.markdown("#### Hard Skills Score")
-        st.markdown(f"**{resume_score['Hard Skills Score']}%**")
 
         st.markdown("#### Suggestions to Improve ATS Score")
         for suggestion in resume_score['Suggestions']:
