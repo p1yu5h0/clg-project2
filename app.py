@@ -5,7 +5,7 @@ import PyPDF2 as pdf
 from dotenv import load_dotenv
 import json
 
-load_dotenv()  # load all our environment variables
+load_dotenv()
 
 genai.configure(api_key=os.getenv("GOOGLE_API_KEY"))
 
@@ -34,12 +34,13 @@ Style: The overall formatting, structure, and readability of the resume.
 Sections: The completeness and organization of the resume sections (e.g., Summary, Experience, Education, Skills).
 Soft Skills: The presence and emphasis on relevant soft skills for the target roles.
 Hard Skills: The inclusion and prominence of relevant hard skills for the target roles.
+Suggestions: This include the suggestions by the ATS for inproving the resume score and help the student to secure a job easily. Tell about 5-6 things by which you could improve the resume.
 
 {jd_prompt}
 resume:{text}
 
 I want the response in one single string having the structure
-{{"Overall ATS Score":"%", "Impact Score":"%", "Brevity Score":"%", "Style Score":"%", "Sections Score":"%", "Soft Skills Score":"%", "Hard Skills Score":"%", "MissingKeywords":[], "Profile Summary":""}}
+{{"Overall ATS Score":"%", "Impact Score":"%", "Brevity Score":"%", "Style Score":"%", "Sections Score":"%", "Soft Skills Score":"%", "Hard Skills Score":"%", "MissingKeywords":[], "Profile Summary":"", "Suggestions": ""}}
 """
 
 # Streamlit app
@@ -97,6 +98,10 @@ if submit:
 
             st.markdown("#### Profile Summary")
             st.markdown(response_data['Profile Summary'])
+
+            st.markdown("#### Suggestions to Improve ATS Score")
+            st.markdown(response_data['Suggestions'])
+
 
         except (ValueError, KeyError):
             st.error("Invalid response format. Please try again.")
