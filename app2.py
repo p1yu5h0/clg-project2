@@ -1,6 +1,7 @@
 import streamlit as st
 import PyPDF2 as pdf
 import spacy
+from spacy.cli.download import download
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.metrics.pairwise import cosine_similarity
 import re
@@ -10,6 +11,8 @@ import google.generativeai as genai
 from dotenv import load_dotenv
 
 load_dotenv()
+
+download("en_core_web_sm")
 
 # Load the pre-trained spaCy model
 nlp = spacy.load("en_core_web_sm")
