@@ -12,7 +12,7 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-download("en_core_web_sm")
+# download("en_core_web_sm")
 
 # Load the pre-trained spaCy model
 nlp = spacy.load("en_core_web_sm")
@@ -33,7 +33,7 @@ def score_resume(resume_text, job_description=None):
         target_keywords = [token.lemma_ for token in doc if not token.is_stop and not token.is_punct]
         vectorizer = TfidfVectorizer()
         tfidf_matrix = vectorizer.fit_transform([" ".join(target_keywords), " ".join(resume_keywords)])
-        similarity_score = cosine_similarity(tfidf_matrix[0], tfidf_matrix[1])
+        similarity_score = cosine_similarity(tfidf_matrix[0], tfidf_matrix[1]) + 100
     else:
         similarity_score = 1.0  # If no job description is provided, assume a perfect match
 
@@ -47,10 +47,10 @@ def score_resume(resume_text, job_description=None):
 
     # Calculate the overall ATS score
     if job_description:
-        overall_ats_score = int((similarity_score * 0.4) + (sum([impact_score, brevity_score, style_score, sections_score, soft_skills_score, hard_skills_score]) / 600) * 0.6)
+        overall_ats_score = int((similarity_score * 0.4) + (sum([impact_score, brevity_score, style_score, sections_score]) / 400) * 0.6)
     else:
-        overall_ats_score = int(sum([impact_score, brevity_score, style_score, sections_score, soft_skills_score, hard_skills_score]) / 600 * 100)
-
+        overall_ats_score = int((1 * sum([impact_score, brevity_score, style_score, sections_score])) / 400 * 100)
+    
     # Suggestions for improvement
     suggestions = generate_suggestions(resume_text, similarity_score, impact_score, brevity_score, style_score, sections_score, soft_skills_score, hard_skills_score)
 
@@ -77,16 +77,16 @@ def calculate_impact_score(resume_text):
     # Quantifying impact
     impact_pattern = r'\b\d+\%?\b|\$\d+|\d+\s?(million|thousand|billion)'
     impact_matches = re.findall(impact_pattern, resume_text, re.IGNORECASE)
-    quantified_impact_score = len(impact_matches) / len(resume_text.split()) * 50
+    quantified_impact_score = len(impact_matches) / len(resume_text.split()) * 50 * 20
 
     # Accomplishment-oriented language
     accomplishment_words = ["achieved", "accomplished", "improved", "increased", "enhanced", "optimized"]
     accomplishment_words_count = sum(resume_text.lower().count(word) for word in accomplishment_words)
-    accomplishment_language_score = (accomplishment_words_count / len(resume_text.split())) * 50
+    accomplishment_language_score = (accomplishment_words_count / len(resume_text.split())) * 50 * 20
 
     # Calculate the overall impact score
     impact_score = int(quantified_impact_score + accomplishment_language_score)
-    return impact_score*20
+    return impact_score
 
 def calculate_brevity_score(resume_text):
     # Resume length
@@ -126,7 +126,7 @@ def calculate_style_score(resume_text):
 
 def calculate_sections_score(resume_text):
     # Check for the presence of common resume sections
-    sections = ["summary", "experience", "education", "skills"]
+    sections = ["summary", "experience", "education", "skills", "projects"]
     sections_found = [section for section in sections if re.search(r'\b' + section + r'\b', resume_text, re.IGNORECASE)]
     sections_score = len(sections_found) / len(sections) * 100
     return int(sections_score)
@@ -147,7 +147,7 @@ def generate_suggestions(resume_text, similarity_score, impact_score, brevity_sc
     suggestions = []
     if similarity_score < 0.5:
         suggestions.append("Tailor your resume to better match the job description.")
-    if impact_score < 50:
+    if impact_score < 90:
         suggestions.append("Quantify your achievements and showcase your impact more effectively.")
     if brevity_score < 50:
         suggestions.append("Condense your resume and avoid unnecessary details.")
@@ -199,7 +199,7 @@ if submit:
 
         st.success("Resume Analysis Completed!")
 
-        st.markdown("#### Overall ATS Score")
+        st.markdown("#### Overall ATS Score", help="This is ATS Score")
         st.markdown(f"**{resume_score['Overall ATS Score']}%**")
 
         st.markdown("#### Impact Score")
