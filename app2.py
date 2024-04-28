@@ -1,12 +1,10 @@
 import streamlit as st
-import streamlit_authenticator as stauth
 import PyPDF2 as pdf
 import spacy
 from spacy.cli.download import download
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.metrics.pairwise import cosine_similarity
 import re
-import textstat
 import os
 import google.generativeai as genai
 from dotenv import load_dotenv
