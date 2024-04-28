@@ -12,3 +12,5 @@ plotly
 matplotlib
 streamlit_authenticator
 streamlit_google_auth
+google-auth 
+google-auth-oauthlib

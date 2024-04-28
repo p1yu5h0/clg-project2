@@ -10,8 +10,20 @@ import google.generativeai as genai
 from dotenv import load_dotenv
 import numpy as np
 import matplotlib.pyplot as plt
+from google.oauth2.credentials import Credentials
+from google_auth_oauthlib.flow import InstalledAppFlow
 
 load_dotenv()
+
+# Set up the Google OAuth flow
+SCOPES = ['https://www.googleapis.com/auth/userinfo.email', 'openid']
+CLIENT_SECRETS_FILE = 'client_secret.json'
+
+def google_oauth_flow():
+    flow = InstalledAppFlow.from_client_secrets_file(
+        CLIENT_SECRETS_FILE, SCOPES)
+    credentials = flow.run_local_server(port=0)
+    return credentials
 
 # download("en_core_web_sm")
 
@@ -214,7 +226,6 @@ def input_pdf_text(uploaded_file):
 
 # Streamlit app
 st.set_page_config(page_title="ResuScan for IET DAVV", page_icon="iet-logo.png")
-
 col1, col2 = st.columns([1, 5])  # Adjust the column widths as needed
 with col1:
     logo = "iet-logo.png"
@@ -224,50 +235,62 @@ with col2:
     st.title("ResuScan for IET DAVV")
 st.markdown("### Improve Your Resume ATS")
 
-uploaded_file = st.file_uploader("Upload Your Resume", type="pdf", help="Please upload the PDF", key="resume_upload")
+def main():
+    uploaded_file = st.file_uploader("Upload Your Resume", type="pdf", help="Please upload the PDF", key="resume_upload")
 
-with st.expander("Add Job Description (Optional)"):
-    job_description = st.text_area("Paste the Job Description", height=200, key="job_description")
+    with st.expander("Add Job Description (Optional)"):
+        job_description = st.text_area("Paste the Job Description", height=200, key="job_description")
 
-submit = st.button("Submit")
+    submit = st.button("Submit")
 
-if submit:
-    if uploaded_file is not None:
-        text = input_pdf_text(uploaded_file)
-        resume_score = score_resume(text, job_description)
+    if submit:
+        if uploaded_file is not None:
+            text = input_pdf_text(uploaded_file)
+            resume_score = score_resume(text, job_description)
 
-        st.success("Resume Analysis Completed!")
+            st.success("Resume Analysis Completed!")
 
-        st.markdown("#### Overall ATS Score", help="This is ATS Score")
-        st.markdown(f"**{resume_score['Overall ATS Score']}%**")
+            st.markdown("#### Overall ATS Score", help="This is ATS Score")
+            st.markdown(f"**{resume_score['Overall ATS Score']}%**")
 
-        st.markdown("#### Impact Score")
-        st.markdown(f"**{resume_score['Impact Score']}%**")
+            st.markdown("#### Impact Score")
+            st.markdown(f"**{resume_score['Impact Score']}%**")
 
-        st.markdown("#### Brevity Score")
-        st.markdown(f"**{resume_score['Brevity Score']}%**")
+            st.markdown("#### Brevity Score")
+            st.markdown(f"**{resume_score['Brevity Score']}%**")
 
-        st.markdown("#### Style Score")
-        st.markdown(f"**{resume_score['Style Score']}%**")
+            st.markdown("#### Style Score")
+            st.markdown(f"**{resume_score['Style Score']}%**")
 
-        st.markdown("#### Sections Score")
-        st.markdown(f"**{resume_score['Sections Score']}%**")
+            st.markdown("#### Sections Score")
+            st.markdown(f"**{resume_score['Sections Score']}%**")
 
-        st.markdown("#### Suggestions to Improve ATS Score")
-        for suggestion in resume_score['Suggestions']:
-            st.markdown(f"- {suggestion}")
+            st.markdown("#### Suggestions to Improve ATS Score")
+            for suggestion in resume_score['Suggestions']:
+                st.markdown(f"- {suggestion}")
 
-        st.markdown("#### Profile Summary")
-        st.markdown(resume_score['Profile Summary'])
+            st.markdown("#### Profile Summary")
+            st.markdown(resume_score['Profile Summary'])
 
-        # Bar chart
-        st.title("Bar Chart")
-        st.bar_chart(scores)
+            # Bar chart
+            st.title("Bar Chart")
+            st.bar_chart(scores)
 
-        # Pie chart
-        st.title("Pie Chart")
-        pie_chart = plot_pie_chart(scores)
-        st.pyplot(pie_chart)
+            # Pie chart
+            st.title("Pie Chart")
+            pie_chart = plot_pie_chart(scores)
+            st.pyplot(pie_chart)
 
-    else:
-        st.warning("Please upload a resume.")
+        else:
+            st.warning("Please upload a resume.")
+
+if 'credentials' not in st.session_state:
+        if st.button("Sign in"):
+            credentials = google_oauth_flow()
+            st.session_state['credentials'] = credentials
+            print(credentials)
+            st.experimental_rerun()
+
+if 'credentials' in st.session_state:
+        # st.write("Signed in as:", st.session_state['credentials'].account.email)
+        main()
