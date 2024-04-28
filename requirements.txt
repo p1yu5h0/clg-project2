@@ -1,17 +1,13 @@
-# streamlit
-# PyPDF2
-# google.generativeai
-# python-dotenv
-# spacy==3.5.2
-# scikit-learn==1.2.2
-# nltk==3.8.1
-# language-tool-python==2.3.1
-# textstat==0.7.0
-
-streamlit
-PyPDF2
-spacy
-scikit-learn
-textstat
-google-generativeai
+streamlit==1.22.0
+spacy==3.5.2
+scikit-learn==1.2.2
+PyPDF2==3.0.1
+textstat==0.7.0
+nltk==3.8.1
+language-tool-python==2.3.1
+google.generativeai
 python-dotenv
+numpy
+plotly
+matplotlib
+streamlit_authenticator
