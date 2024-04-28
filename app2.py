@@ -1,4 +1,5 @@
 import streamlit as st
+import streamlit_authenticator as stauth
 import PyPDF2 as pdf
 import spacy
 from spacy.cli.download import download
@@ -9,6 +10,8 @@ import textstat
 import os
 import google.generativeai as genai
 from dotenv import load_dotenv
+import numpy as np
+import matplotlib.pyplot as plt
 
 load_dotenv()
 
@@ -20,6 +23,16 @@ nlp = spacy.load("en_core_web_sm")
 # Define the soft skills and hard skills lists
 soft_skills = ["communication", "teamwork", "leadership", "problem-solving", "critical thinking"]
 hard_skills = ["python", "machine learning", "data analysis", "predictive modeling", "data visualization"]
+
+scores = {
+    "Overall ATS Score": 80,
+    "Impact Score": 90,
+    "Brevity Score": 70,
+    "Style Score": 80,
+    "Sections Score": 85,
+    "Hard Skills Score": 85
+}
+
 
 # Function to score the resume
 def score_resume(resume_text, job_description=None):
@@ -42,7 +55,7 @@ def score_resume(resume_text, job_description=None):
     brevity_score = calculate_brevity_score(resume_text)
     style_score = calculate_style_score(resume_text)
     sections_score = calculate_sections_score(resume_text)
-    soft_skills_score = calculate_soft_skills_score(resume_text, soft_skills)
+    soft_skills_score = calculate_hard_skills_score(resume_text, soft_skills)
     hard_skills_score = calculate_hard_skills_score(resume_text, hard_skills)
 
     # Calculate the overall ATS score
@@ -56,6 +69,14 @@ def score_resume(resume_text, job_description=None):
 
     # Profile summary
     profile_summary = generate_profile_summary(resume_text)
+
+    # update the scores table
+    scores["Overall ATS Score"] = overall_ats_score
+    scores["Impact Score"] = impact_score
+    scores["Brevity Score"] = brevity_score
+    scores["Style Score"] = style_score
+    scores["Sections Score"] = sections_score
+    scores["Hard Skills Score"] = hard_skills_score
 
     # Construct the response
     response = {
@@ -72,10 +93,22 @@ def score_resume(resume_text, job_description=None):
 
     return response
 
+def plot_pie_chart(scores):
+    labels = list(scores.keys())
+    values = list(scores.values())
+    plt.pie(values, labels=labels, autopct="%1.1f%%")
+    plt.axis("equal")
+    plt.title("Resume Scores")
+
+    return plt
+
 # Helper functions
 def calculate_impact_score(resume_text):
     # Quantifying impact
     impact_pattern = r'\b\d+\%?\b|\$\d+|\d+\s?(million|thousand|billion)'
+    # \b\d+\%?\b: Matches numerical values with or without a percentage sign.
+    # |\$\d+: Matches dollar amounts.
+    # |\d+\s?(million|thousand|billion): Matches numerical values followed by optional space and units like "million," "thousand," or "billion."
     impact_matches = re.findall(impact_pattern, resume_text, re.IGNORECASE)
     quantified_impact_score = len(impact_matches) / len(resume_text.split()) * 50 * 20
 
@@ -101,6 +134,7 @@ def calculate_brevity_score(resume_text):
 
     # Use of bullet points
     bullet_points = re.findall(r'^\s*[-*•]\s', resume_text, re.MULTILINE)
+    # r'^\s*[-*•]\s' help to find out the 
     bullet_points_score = len(bullet_points) / len(resume_text.split()) * 30
 
     # Total bullet points
@@ -181,8 +215,15 @@ def input_pdf_text(uploaded_file):
     return text
 
 # Streamlit app
-st.set_page_config(page_title="Smart ATS", page_icon=":briefcase:")
-st.title("ATS Scorer")
+st.set_page_config(page_title="ResuScan for IET DAVV", page_icon="iet-logo.png")
+
+col1, col2 = st.columns([1, 5])  # Adjust the column widths as needed
+with col1:
+    logo = "iet-logo.png"
+    st.image(logo, width=100)
+
+with col2:
+    st.title("ResuScan for IET DAVV")
 st.markdown("### Improve Your Resume ATS")
 
 uploaded_file = st.file_uploader("Upload Your Resume", type="pdf", help="Please upload the PDF", key="resume_upload")
@@ -220,6 +261,15 @@ if submit:
 
         st.markdown("#### Profile Summary")
         st.markdown(resume_score['Profile Summary'])
+
+        # Bar chart
+        st.title("Bar Chart")
+        st.bar_chart(scores)
+
+        # Pie chart
+        st.title("Pie Chart")
+        pie_chart = plot_pie_chart(scores)
+        st.pyplot(pie_chart)
 
     else:
         st.warning("Please upload a resume.")
