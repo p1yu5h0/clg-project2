@@ -13,7 +13,7 @@ import matplotlib.pyplot as plt
 
 load_dotenv()
 
-# download("en_core_web_sm")
+download("en_core_web_sm")
 
 # Load the pre-trained spaCy model
 nlp = spacy.load("en_core_web_sm")
