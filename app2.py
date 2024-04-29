@@ -23,6 +23,7 @@ def google_oauth_flow():
     flow = InstalledAppFlow.from_client_secrets_file(
         CLIENT_SECRETS_FILE, SCOPES)
     credentials = flow.run_local_server(port=0)
+    print(credentials, 1)
     return credentials
 
 # download("en_core_web_sm")
@@ -191,13 +192,13 @@ def generate_suggestions(resume_text, similarity_score, impact_score, brevity_sc
     suggestions = []
     if similarity_score < 0.5:
         suggestions.append("Tailor your resume to better match the job description.")
-    if impact_score < 90:
+    if impact_score < 70:
         suggestions.append("Quantify your achievements and showcase your impact more effectively.")
     if brevity_score < 50:
         suggestions.append("Condense your resume and avoid unnecessary details.")
     if style_score < 70:
         suggestions.append("Improve the formatting and structure of your resume for better readability.")
-    if sections_score < 80:
+    if sections_score < 90:
         suggestions.append("Ensure your resume includes all the essential sections (Summary, Experience, Education, Skills).")
     if soft_skills_score < 70:
         suggestions.append("Highlight relevant soft skills for the target roles.")
@@ -273,11 +274,11 @@ def main():
             st.markdown(resume_score['Profile Summary'])
 
             # Bar chart
-            st.title("Bar Chart")
+            st.title("Bar Chart for Score Analysis")
             st.bar_chart(scores)
 
             # Pie chart
-            st.title("Pie Chart")
+            st.title("Pie Chart for Score Analysis")
             pie_chart = plot_pie_chart(scores)
             st.pyplot(pie_chart)
 
@@ -285,12 +286,15 @@ def main():
             st.warning("Please upload a resume.")
 
 if 'credentials' not in st.session_state:
-        if st.button("Sign in"):
+        if st.button("Sign in (with Institue Email Id)"):
             credentials = google_oauth_flow()
             st.session_state['credentials'] = credentials
             print(credentials)
             st.experimental_rerun()
 
 if 'credentials' in st.session_state:
-        # st.write("Signed in as:", st.session_state['credentials'].account.email)
+        logout_button = st.button("Logout")
+        if logout_button:
+            del st.session_state['credentials']
+            st.experimental_rerun()
         main()
